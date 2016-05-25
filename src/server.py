@@ -7,7 +7,7 @@ import json
 import asyncio
 import websockets
 
-from bot import Bot
+from command.bot import Bot
 
 
 connected = set()
