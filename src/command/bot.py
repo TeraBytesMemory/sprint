@@ -11,9 +11,6 @@ class Bot(Command):
     def __init__(self, data):
         super().__init__(data)
 
-        if not self.data[0] == self.__class__.command():
-            return
-
         bot_command = data[1:]
 
         if bot_command[0] == Ping.command():

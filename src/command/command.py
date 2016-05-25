@@ -10,6 +10,9 @@ class Command(metaclass=ABCmeta):
         self.data = data.split() \
                     if type(data) == str else data
 
+        if self.data[0] != self.__class__.command():
+            raise TypeError
+
     @abstractmethod
     def run(self):
         pass
