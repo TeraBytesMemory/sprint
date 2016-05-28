@@ -11,9 +11,11 @@ from command.bot import Bot
 
 
 connected = set()
+host = 'sprint-hack.herokuapp.com'
 
 
 def httpHandler():
+    global host
     while True:
         @route('/')
         def index():
@@ -25,7 +27,7 @@ def httpHandler():
         def server_static(filename):
             return static_file(filename, root='./app')
 
-        run(host='localhost', port=9001)
+        run(host=host, port=9001)
 
 
 @asyncio.coroutine
@@ -56,7 +58,7 @@ def receive_send(websocket, path):
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
-    start_server = websockets.serve(receive_send, '127.0.0.1', 3000)
+    start_server = websockets.serve(receive_send, host, 3000)
     server = loop.run_until_complete(start_server)
     print('Listen')
 
