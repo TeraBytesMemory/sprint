@@ -1,7 +1,9 @@
 asyncio==3.4.3
+bottle==0.12.9
 flake8==2.5.4
 mccabe==0.4.0
 pep8==1.7.0
+psycopg2==2.6.1
 pyflakes==1.0.0
 SQLAlchemy==1.0.13
 websockets==3.1
