@@ -1,3 +1,4 @@
+
 'user strict';
 
 var assert = require('chai').assert,
@@ -118,11 +119,11 @@ describe('Bot todo', function() {
     client1.onopen = function() {
       for (var i = 0; i < forList.length; i++) {
         commandCount++;
-        client1.send("bot todo add " + forList[i].command +  " " + forList[i].data);
+          client1.send("bot todo add " + forList[i].command +  " " + forList[i].data);
       }
       if(commandCount === forList.length) {
         commandCount++;
-        client1.send("bot todo list");
+          client1.send("bot todo list");
       }
       client1.onmessage = function(msg) {
         var returnObject = JSON.parse(msg.data);
