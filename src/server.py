@@ -27,7 +27,7 @@ def httpHandler():
         def server_static(filename):
             return static_file(filename, root='./app')
 
-        run(host=host, port=9001)
+        run(host=host, port=80)
 
 
 @asyncio.coroutine
