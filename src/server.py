@@ -25,7 +25,7 @@ def httpHandler():
         def server_static(filename):
             return static_file(filename, root='./app')
 
-        run(host='localhost', port=9000)
+        run(host='localhost', port=9001)
 
 
 @asyncio.coroutine
@@ -38,8 +38,14 @@ def receive_send(websocket, path):
         while True:
             data = yield from websocket.recv()
 
+            send_data = '''{
+            "data": "%s"
+            }''' % data
+            for ws in connected:
+                yield from ws.send(send_data)
+
             send_data = Bot(data).run()
-            send_data = json.dumps()
+            send_data = json.dumps(send_data)
 
             for ws in connected:
                 yield from ws.send(send_data)

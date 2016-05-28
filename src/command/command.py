@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from abc import ABCmeta, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 
-class Command(metaclass=ABCmeta):
+class Command(metaclass=ABCMeta):
 
     def __init__(self, data):
-        self.data = data.split() \
-                    if type(data) == str else data
+        if type(data) == list:
+            self.data = data
+        elif type(data) == str:
+            self.data = data.split(' ')
 
         if self.data[0] != self.__class__.command():
             raise TypeError
@@ -17,7 +19,7 @@ class Command(metaclass=ABCmeta):
     def run(self):
         pass
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def command(cls):
         pass

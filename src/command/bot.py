@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-from command import Command
-from ping import Ping
-from todo import Todo
+from .command import Command
+from .ping import Ping
+from .todo import Todo
 
 
 class Bot(Command):
@@ -11,7 +11,7 @@ class Bot(Command):
     def __init__(self, data):
         super().__init__(data)
 
-        bot_command = data[1:]
+        bot_command = self.data[1:]
 
         if bot_command[0] == Ping.command():
             self.command = Ping(bot_command)
@@ -19,7 +19,7 @@ class Bot(Command):
             self.command = Todo(bot_command)
 
     def run(self):
-        self.command.run()
+        return self.command.run()
 
     @classmethod
     def command(cls):
