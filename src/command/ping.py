@@ -7,7 +7,7 @@ from .command import Command
 class Ping(Command):
 
     def run(self):
-        return {
+        yield {
             "data": "pong"
         }
 

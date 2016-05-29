@@ -19,7 +19,10 @@ class Bot(Command):
             self.command = Todo(bot_command)
 
     def run(self):
-        return self.command.run()
+        yield {
+            "data": ' '.join(self.data)
+        }
+        yield from self.command.run()
 
     @classmethod
     def command(cls):
