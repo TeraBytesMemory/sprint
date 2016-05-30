@@ -23,11 +23,12 @@ class Twitter(Command):
     def run(self):
         pass
 
-    def _traffic(self, loc_var, timeout_sec=5):
+    def _traffic(self, sq_loc, timeout_sec=5):
         start_time = datetime.now()
         result = []
 
-        itr = self._tweet_from_loc(loc_var)
+        query = ",".join(map(str, sq_loc))
+        itr = self._tweet_from_loc(query)
 
         for i in itr:
             result.append(i)
@@ -53,12 +54,11 @@ class Twitter(Command):
         var_latitude = meter / (1850 * 60)
         var_longitude = meter / (1850 * 60 * cos(longitude))
 
-        square = [longitude - var_longitude,
+        result = [longitude - var_longitude,
                   latitude - var_latitude,
                   longitude + var_longitude,
                   latitude + var_latitude]
 
-        result = ",".join(map(str, square))
         return result
 
     @classmethod
