@@ -18,24 +18,29 @@ class Twitter(Command):
         consumer_key = 'rN94BWPXYM2gPkQ8O5fmZ6sul'
         consumer_secret = 'CUpuN2QpLYdAWQXSwGcIBWM3qlJctud0t8fmRQagv1YJ2XEV3u'
 
+        self.yahoo_api_key = 'dj0zaiZpPVRBTTdlUTlncmVLTiZzPWNvbnN1bWVyc2VjcmV0Jng9MGQ-'
+
+        self.auth = tw.OAuth(token,
+                             token_key,
+                             consumer_key,
+                             consumer_secret)
+
         super().__init__(data)
 
-        self.auth = tw.OAuth(token, token_key, consumer_key, consumer_secret)
         self.meter = 100
 
     def run(self):
         try:
             lat, lng = float(self.data[1]), float(self.data[2])
+            box = self._gen_box_from_meter(lat, lng, self.meter)
         except (ValueError, IndexError):
             loc_name = self.data[1]
-            lat, lng = self._get_topo_from_loc_name(loc_name)
+            box = self._get_box_from_loc_name(loc_name)
 
-        sq_loc = self._gen_sq_loc_from_meter(lat, lng, self.meter)
-
-        yield from self._traffic(sq_loc)
+        yield from self._traffic(box)
 
 
-    def _traffic(self, sq_loc, timeout_sec=5):
+    def _traffic(self, box, timeout_sec=5):
         yield {
             "data": "tweet start streaming ..."
         }
@@ -43,7 +48,7 @@ class Twitter(Command):
         start_time = datetime.now()
         result = []
 
-        query = ",".join(map(str, sq_loc))
+        query = ",".join(map(str, box))
         itr = self._tweet_from_loc(query)
 
         for i in itr:
@@ -82,7 +87,7 @@ class Twitter(Command):
         st_client = self._get_stream()
         return st_client.statuses.filter(locations=loc_var)
 
-    def _gen_sq_loc_from_meter(self, lat: float, lng: float, meter):
+    def _gen_box_from_meter(self, lat: float, lng: float, meter):
         # http://oshiete.goo.ne.jp/qa/141526.html
         var_lat = meter / (1850 * 60)
         var_lng = meter / (1850 * 60 * cos(lng))
@@ -94,18 +99,26 @@ class Twitter(Command):
 
         return result
 
-    def _get_topo_from_loc_name(self, loc_name):
+    def _get_box_from_loc_name(self, loc_name, box=True):
         loc_name = pathname2url(loc_name)
-        api_url = 'http://www.geocoding.jp/api/?v=1.1&q={}'.format(loc_name)
+        api_url = 'http://geo.search.olp.yahooapis.jp/OpenLocalPlatform/V1/geoCoder?appid={0}&q={1}'
+        api_url = api_url.format(self.yahoo_api_key, loc_name)
 
         req = urlopen(api_url)
         body = ''.join(map(lambda x: x.decode('utf-8'), req.readlines()))
-        soup = BeautifulSoup(body)
 
-        lat = soup.find('lat').get_text()
-        lng = soup.find('lng').get_text()
+        soup = BeautifulSoup(body).ydf
+        geo = soup.feature
 
-        return float(lat), float(lng)
+        if box:
+            box = geo.find('boundingbox').get_text()
+            box.replace(' ', ',')
+
+            return box.split(',')
+        else:
+            coord = geo.find('coordinates').get_text()
+            lng, lat = (float(v) for v in coord.split(','))
+            return lng, lat
 
     @classmethod
     def command(cls):
