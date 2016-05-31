@@ -20,13 +20,9 @@ class Twitter(Command):
 
         self.yahoo_api_key = 'dj0zaiZpPVRBTTdlUTlncmVLTiZzPWNvbnN1bWVyc2VjcmV0Jng9MGQ-'
 
-        self.auth = tw.OAuth(token,
-                             token_key,
-                             consumer_key,
-                             consumer_secret)
-
         super().__init__(data)
 
+        self.auth = tw.OAuth(token, token_key, consumer_key, consumer_secret)
         self.meter = 100
 
     def run(self):
@@ -112,9 +108,12 @@ class Twitter(Command):
 
         if box:
             box = geo.find('boundingbox').get_text()
-            box.replace(' ', ',')
 
-            return box.split(',')
+            s, l = box.split(' ')
+            lng_s, lat_s = s.split(',')
+            lng_l, lat_l = l.split(',')
+
+            return [float(v) for v in [lng_s, lat_s, lng_l, lat_l]]
         else:
             coord = geo.find('coordinates').get_text()
             lng, lat = (float(v) for v in coord.split(','))
