@@ -4,6 +4,7 @@
 from .command import Command
 from .ping import Ping
 from .todo import Todo
+from .twitter import Twitter
 
 
 class Bot(Command):
@@ -17,6 +18,8 @@ class Bot(Command):
             self.command = Ping(bot_command)
         elif bot_command[0] == Todo.command():
             self.command = Todo(bot_command)
+        elif bot_command[0] == Twitter.command():
+            self.command = Twitter(bot_command)
 
     def run(self):
         yield {
