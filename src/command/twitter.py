@@ -8,7 +8,7 @@ from urllib.request import urlopen, pathname2url
 from bs4 import BeautifulSoup
 
 from .command import Command
-
+from .utils import timeout
 
 class Twitter(Command):
 
@@ -21,21 +21,42 @@ class Twitter(Command):
         super().__init__(data)
 
         self.auth = tw.OAuth(token, token_key, consumer_key, consumer_secret)
-        self.meter = 100
+
+        self._add_option('-m', float, '100')
+        self._add_option('--meter', float, '0')
+
+        self._add_option('-w', float, '5')
+        self._add_option('--wait', float, '0')
+
+        self._add_option('--country', bool)
+        self._add_option('--admin', bool)
+        self._add_option('--city', bool)
+
+        parse_result = self._parse_option()
+
+        self.meter = parse_result['--meter'] or parse_result['-m']
+        self.wait_time = parse_result['--wait'] or parse_result['-w']
+
+        self.filter = []
+        self.filter += ['country'] if parse_result['--country'] else []
+        self.filter += ['admin'] if parse_result['--admin'] else []
+        self.filter += ['city'] if parse_result['--city'] else []
+        if not self.filter:
+            self.filter = ['country', 'admin', 'city']
 
     def run(self):
         try:
             lat, lng = float(self.data[1]), float(self.data[2])
         except (ValueError, IndexError):
-            loc_name = self.data[1]
+            loc_name = ' '.join(self.data[1:])
             lat, lng = self._get_topo_from_loc_name(loc_name)
 
         sq_loc = self._gen_sq_loc_from_meter(lat, lng, self.meter)
 
-        yield from self._traffic(sq_loc)
+        yield from self._traffic(sq_loc, self.wait_time)
 
 
-    def _traffic(self, sq_loc, timeout_sec=5):
+    def _traffic(self, sq_loc, timeout_sec):
         yield {
             "data": "tweet start streaming ..."
         }
@@ -44,14 +65,23 @@ class Twitter(Command):
         result = []
 
         query = ",".join(map(str, sq_loc))
-        itr = self._tweet_from_loc(query)
+        itr = self._tweet_from_loc(query, timeout_sec)
 
-        for i in itr:
-            result.append(i)
+        try:
+            with timeout(int(timeout_sec)):
+                for i in itr:
+                    if i['place']['place_type'] in self.filter:
+                        result.append(i)
+        except TimeoutError:
             now = datetime.now()
-            if (now - start_time).seconds > timeout_sec:
-                end_time = now
-                break
+
+        result = ['@{user}: {tweet} in {loc} ({place_type})'
+                  .format(**{
+                      'user': r['user']['screen_name'],
+                      'tweet': r['text'],
+                      'loc': r['place']['name'],
+                      'place_type': r['place']['place_type']
+                  }) for r in result]
 
         yield {
             'data': 'tweet get {num} tweet{s} in {time} sec'
@@ -62,14 +92,6 @@ class Twitter(Command):
             })
         }
 
-        result = ['@{user}: {tweet} in {loc} ({place_type})'
-                  .format(**{
-                      'user': r['user']['screen_name'],
-                      'tweet': r['text'],
-                      'loc': r['place']['name'],
-                      'place_type': r['place']['place_type']
-                  }) for r in result]
-
         for r in result:
             yield {
                 'data': r
@@ -78,9 +100,9 @@ class Twitter(Command):
     def _get_stream(self):
         return tw.TwitterStream(auth=self.auth)
 
-    def _tweet_from_loc(self, loc_var):
+    def _tweet_from_loc(self, loc_var, timeout=True):
         st_client = self._get_stream()
-        return st_client.statuses.filter(locations=loc_var)
+        return st_client.statuses.filter(locations=loc_var, timeout=timeout)
 
     def _gen_sq_loc_from_meter(self, lat: float, lng: float, meter):
         # http://oshiete.goo.ne.jp/qa/141526.html
@@ -110,7 +132,3 @@ class Twitter(Command):
     @classmethod
     def command(cls):
         return 'twitter'
-
-
-def large_than(loc1: list, loc2: list):
-    pass

@@ -3,6 +3,7 @@
 
 from abc import ABCMeta, abstractmethod
 import re
+from .option.option_parser import OptionParser
 
 
 class Command(metaclass=ABCMeta):
@@ -16,46 +17,14 @@ class Command(metaclass=ABCMeta):
         if self.data[0] != self.__class__.command():
             raise TypeError
 
-        self.flag = {}
-        self.long_flag
-        self.default = {}
+        self.opt_parser = OptionParser()
 
-    def _add_flag(self, flag: str, _type: type, default: str, _long=None):
-        if not re.match(r'-\w', flag):
-            raise ValueError
-        if flag[:1] == '--':
-            _long = flag
+    def _add_option(self, flag: str, _type: type, default: str = ''):
+        self.opt_parser.add_option(flag, _type, default)
 
-        self.flag[flag] = {
-            'type': _type,
-            'default': default
-        }
-
-        self.default[flag] = default
-        if type(_long) == str:
-            if flag[:1] != '--':
-                raise ValueError
-
-            self.long_flag = {
-                'type': _type,
-                'default': default,
-                'short': flag
-            }
-
-    def _run_flag(self) -> dict:
-        result = {}
-
-        for k, v in self.flag:
-            if k in self.data:
-                try:
-                    i = self.data.index(k)
-                    value = self.data[i+1]
-                    if not (re.match(r'-\w', value) \
-                            or value[:1] == '--'):
-                        result[k] = type(value)
-                except (IndexError, ValueError):
-                    continue
-
+    def _parse_option(self):
+        new_data, result = self.opt_parser.parse(self.data)
+        self.data = new_data
         return result
 
     @abstractmethod
