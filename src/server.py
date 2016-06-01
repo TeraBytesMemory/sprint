@@ -43,17 +43,12 @@ def receive_send(websocket, path):
         while True:
             data = yield from websocket.recv()
 
-            send_data = '''{
-            "data": "%s"
-            }''' % data
-            for ws in connected:
-                yield from ws.send(send_data)
+            results = Bot(data).run()
+            for result in results:
+                send_data = json.dumps(result)
+                for ws in connected:
+                    yield from ws.send(send_data)
 
-            send_data = Bot(data).run()
-            send_data = json.dumps(send_data)
-
-            for ws in connected:
-                yield from ws.send(send_data)
     except KeyboardInterrupt:
         print('\nCtrl-C (SIGINT) caught. Exiting...')
     finally:
