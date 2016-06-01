@@ -35,11 +35,15 @@ class Twitter(Command):
         self._add_option('--admin', bool)
         self._add_option('--city', bool)
 
+        self._add_option('-h', bool)
+        self._add_option('--help', bool)
+
         parse_result = self._parse_option()
 
         self.meter = parse_result['--meter'] or parse_result['-m']
         self.expand = parse_result['--expand'] or parse_result['-e']
         self.wait_time = parse_result['--wait'] or parse_result['-w']
+        self.help = parse_result['--help'] or parse_result['-h']
 
         self.filter = []
         self.filter += ['country'] if parse_result['--country'] else []
@@ -49,6 +53,10 @@ class Twitter(Command):
             self.filter = ['country', 'admin', 'city']
 
     def run(self):
+        if self.help:
+            yield from self._help()
+            return
+
         try:
             lng, lat = float(self.data[1]), float(self.data[2])
             box = self._gen_box_from_meter(lng, lat, self.meter)
@@ -149,6 +157,33 @@ class Twitter(Command):
         var_lat = meter / (1850 * 60 * cos(lng))
 
         return var_lng, var_lat
+
+    def _help(self):
+        doc = '''
+usage: bot twitter [-e] [-h] [-m] [-w] [--admin] [--city] [--country] location ...
+
+Twitter APIとGoogle Maps Geocoding APIを用いて、指定した箇所のツイートを収集する。
+収集する際は、基本的には指定した制限時間内でのツイートを取得して返す。
+
+必要な引数：
+        location: 経度,緯度の順番の二つの少数の場合、入力した経度,緯度の位置を中心とした100mの正方形からツイートを探す。
+                  また、地名を入力することも可能。入力した地名をGoogle Maps Geocodingで取得した場所のツイートを探す。
+
+                  ex.) bot twitter 139.7528, 35.685175, bot twitter los angles
+オプション;
+        -e, --expand: 地名を入力した場合はその地域を含むような長方形内のツイートを探す。その長方形のサイズを周囲指定分メートルだけ広く収集できるようになる。（未指定の場合は拡張しない）
+        ex.) bot twitter 渋谷 -e 100
+        -h, --help: ヘルプコマンド。ツイートの収集は行わない。あとわかりにくくてごめんなさい。
+        -m, --meter: 経度,緯度を入力した場合の正方形の大きさ。例えば、-m=100の場合は100mの正方形からツイートを探す。
+                     (未指定の場合は100になる) ex.) bot twitter -m 200 139.7528, 35.685175
+        -w, --wait: このオプションで指定した時間以内でツイートを取得する。未指定の場合は5秒以内でツイートを探す。指定時間よりもかかる場合もある。
+                    ex.) bot twitter los angles -w 30
+        --admin, --city, --country: 収集するツイートの属性を制限する。それぞれのオプションを指定した場合、それぞれ admin（県、地方）、city（市）、country（国）の属性を持つツイートのみを返す。ここでいう属性は、TwitterAPIのツイートで指定された場所の種類のことをいう。複数指定可能。
+'''
+
+        yield {
+            'data': doc
+        }
 
     @classmethod
     def command(cls):
