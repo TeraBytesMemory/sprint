@@ -14,7 +14,7 @@ from command.bot import Bot
 
 connected = set()
 host = '0.0.0.0'
-ws_port = argv[1]
+ws_port = 3000
 
 
 def httpHandler():
@@ -30,7 +30,7 @@ def httpHandler():
         def server_static(filename):
             return static_file(filename, root='./app')
 
-        #run(host=host, port=int(os.environ.get("PORT", 5000)))
+        run(host=host, port=int(os.getenv("PORT", 5000)))
 
 
 @asyncio.coroutine
