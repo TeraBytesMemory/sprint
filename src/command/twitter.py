@@ -5,7 +5,7 @@ import twitter as tw
 from math import cos
 from datetime import datetime
 from urllib.request import urlopen, pathname2url
-from bs4 import BeautifulSoup
+import json
 
 from .command import Command
 from .utils import timeout
@@ -18,14 +18,15 @@ class Twitter(Command):
         consumer_key = 'rN94BWPXYM2gPkQ8O5fmZ6sul'
         consumer_secret = 'CUpuN2QpLYdAWQXSwGcIBWM3qlJctud0t8fmRQagv1YJ2XEV3u'
 
-        self.yahoo_api_key = 'dj0zaiZpPVRBTTdlUTlncmVLTiZzPWNvbnN1bWVyc2VjcmV0Jng9MGQ-'
-
         super().__init__(data)
 
         self.auth = tw.OAuth(token, token_key, consumer_key, consumer_secret)
 
         self._add_option('-m', float, '100')
         self._add_option('--meter', float, '0')
+
+        self._add_option('-e', float, '0')
+        self._add_option('--expand', float, '0')
 
         self._add_option('-w', float, '5')
         self._add_option('--wait', float, '0')
@@ -37,6 +38,7 @@ class Twitter(Command):
         parse_result = self._parse_option()
 
         self.meter = parse_result['--meter'] or parse_result['-m']
+        self.expand = parse_result['--expand'] or parse_result['-e']
         self.wait_time = parse_result['--wait'] or parse_result['-w']
 
         self.filter = []
@@ -48,8 +50,8 @@ class Twitter(Command):
 
     def run(self):
         try:
-            lat, lng = float(self.data[1]), float(self.data[2])
-            box = self._gen_box_from_meter(lat, lng, self.meter)
+            lng, lat = float(self.data[1]), float(self.data[2])
+            box = self._gen_box_from_meter(lng, lat, self.meter)
         except (ValueError, IndexError):
             loc_name = ' '.join(self.data[1:])
             box = self._get_box_from_loc_name(loc_name)
@@ -104,10 +106,9 @@ class Twitter(Command):
         st_client = self._get_stream()
         return st_client.statuses.filter(locations=loc_var)
 
-    def _gen_box_from_meter(self, lat: float, lng: float, meter):
+    def _gen_box_from_meter(self, lng: float, lat: float, meter):
         # http://oshiete.goo.ne.jp/qa/141526.html
-        var_lat = meter / (1850 * 60)
-        var_lng = meter / (1850 * 60 * cos(lng))
+        var_lng, var_lat = self._meter_to_geo(lng, lat, meter)
 
         result = [lng - var_lng,
                   lat - var_lat,
@@ -116,29 +117,38 @@ class Twitter(Command):
 
         return result
 
-    def _get_box_from_loc_name(self, loc_name, box=True):
+    def _get_box_from_loc_name(self, loc_name):
         loc_name = pathname2url(loc_name)
-        api_url = 'http://geo.search.olp.yahooapis.jp/OpenLocalPlatform/V1/geoCoder?appid={0}&q={1}'
-        api_url = api_url.format(self.yahoo_api_key, loc_name)
+        api_url = 'https://maps.googleapis.com/maps/api/geocode/json?address={}'
+        api_url = api_url.format(loc_name)
 
         req = urlopen(api_url)
         body = ''.join(map(lambda x: x.decode('utf-8'), req.readlines()))
 
-        soup = BeautifulSoup(body).ydf
-        geo = soup.feature
+        result = json.loads(body)['results'][0]
+        geo_box = result['geometry']['bounds']
 
-        if box:
-            box = geo.find('boundingbox').get_text()
+        box = [geo_box['southwest']['lng'],
+               geo_box['southwest']['lat'],
+               geo_box['northeast']['lng'],
+               geo_box['northeast']['lat']]
 
-            s, l = box.split(' ')
-            lng_s, lat_s = s.split(',')
-            lng_l, lat_l = l.split(',')
+        if self.expand:
+            mid = [(box[2] - box[0]) / 2 + box[0],
+                   (box[3] - box[1]) / 2 + box[1]]
+            var_lng, var_lat = self._meter_to_geo(mid[0], mid[1], self.expand)
+            box[0] -= var_lng
+            box[1] -= var_lat
+            box[2] += var_lng
+            box[3] += var_lat
 
-            return [float(v) for v in [lng_s, lat_s, lng_l, lat_l]]
-        else:
-            coord = geo.find('coordinates').get_text()
-            lng, lat = (float(v) for v in coord.split(','))
-            return lng, lat
+        return box
+
+    def _meter_to_geo(self, lng: float, lat: float, meter):
+        var_lng = meter / (1850 * 60)
+        var_lat = meter / (1850 * 60 * cos(lng))
+
+        return var_lng, var_lat
 
     @classmethod
     def command(cls):
