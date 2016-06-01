@@ -23,11 +23,11 @@ class Todo(Command):
         todo_command = self.data[1]
 
         if todo_command == 'add':
-            return self.add(self.data[2], self.data[3:])
+            yield self.add(self.data[2], self.data[3:])
         elif todo_command == 'delete':
-            return self.delete(self.data[2])
+            yield self.delete(self.data[2])
         elif todo_command == 'list':
-            return self.list()
+            yield self.list()
 
     @classmethod
     def command(cls):

@@ -14,7 +14,7 @@ from command.bot import Bot
 
 connected = set()
 host = '0.0.0.0'
-ws_port = argv[1]
+ws_port = 3000
 
 
 def httpHandler():
@@ -30,7 +30,7 @@ def httpHandler():
         def server_static(filename):
             return static_file(filename, root='./app')
 
-        #run(host=host, port=int(os.environ.get("PORT", 5000)))
+        run(host=host, port=int(os.getenv("PORT", 5000)))
 
 
 @asyncio.coroutine
@@ -43,17 +43,12 @@ def receive_send(websocket, path):
         while True:
             data = yield from websocket.recv()
 
-            send_data = '''{
-            "data": "%s"
-            }''' % data
-            for ws in connected:
-                yield from ws.send(send_data)
+            results = Bot(data).run()
+            for result in results:
+                send_data = json.dumps(result)
+                for ws in connected:
+                    yield from ws.send(send_data)
 
-            send_data = Bot(data).run()
-            send_data = json.dumps(send_data)
-
-            for ws in connected:
-                yield from ws.send(send_data)
     except KeyboardInterrupt:
         print('\nCtrl-C (SIGINT) caught. Exiting...')
     finally:

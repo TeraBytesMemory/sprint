@@ -1,1 +1,1 @@
-web: python ./src/server.py $PORT
+web: python ./src/server.py
