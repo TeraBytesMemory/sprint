@@ -7,7 +7,6 @@ import json
 import asyncio
 import websockets
 import os
-from sys import argv
 
 from command.bot import Bot
 
@@ -61,9 +60,9 @@ if __name__ == '__main__':
     server = loop.run_until_complete(start_server)
     print('Listen')
 
-    t = Thread(target=httpHandler)
-    t.daemon = True
-    t.start()
+#    t = Thread(target=httpHandler)
+#    t.daemon = True
+#    t.start()
 
     try:
         loop.run_forever()
