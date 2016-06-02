@@ -1,5 +1,4 @@
 ## STEP1. デプロイ情報
-（更新中）
  Herokuを使いました。ただし、実装の都合上、フロントとサーバーのホストが異なっています。
  
  - フロント：https://sprint-bot-chat.herokuapp.com/
