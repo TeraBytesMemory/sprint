@@ -1,6 +1,6 @@
 'use strict';
 
-var ws = new WebSocket('ws://sprint-hack.herokuapp.com');
+var ws = new WebSocket('wss://sprint-hack.herokuapp.com');
 
 $(function () {
   $('form').submit(function(){
