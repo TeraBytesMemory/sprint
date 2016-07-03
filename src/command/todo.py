@@ -12,7 +12,7 @@ class Todo(Command):
     def __init__(self, data):
         super().__init__(data)
 
-        db_url = 'postgres://npvztuassmpeql:NijXOxZWRtvgL5eGQUz1olMTzP@ec2-23-23-95-27.compute-1.amazonaws.com:5432/d6buclujgtf4c6'
+        db_url = 'postgres://'
 
         engine = create_engine(db_url, echo=True)
         Session = sessionmaker(bind=engine)
