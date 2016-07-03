@@ -13,10 +13,10 @@ from .utils import timeout
 class Twitter(Command):
 
     def __init__(self, data):
-        token = '3132998455-VhvyIApFRecDu6e7Ro6bzu02nNtKV7ClOEXeeSZ'
-        token_key = 'U1EbBib9gV3yG9pAAUZ42BzlYDxklFGvLEr0wSwxxUjld'
-        consumer_key = 'rN94BWPXYM2gPkQ8O5fmZ6sul'
-        consumer_secret = 'CUpuN2QpLYdAWQXSwGcIBWM3qlJctud0t8fmRQagv1YJ2XEV3u'
+        token = ''
+        token_key = ''
+        consumer_key = ''
+        consumer_secret = ''
 
         super().__init__(data)
 
